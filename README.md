@@ -1,5 +1,9 @@
 # Prism
 
+## Setup on nsl cluster
+Follow nsl_cluster_setup.sh
+
+
 Research prototype
 
 All sources are published under Apache2 license unless there is no license text on top of the file.

@@ -82,7 +82,7 @@ start_connect_to_backends(uv_loop_t *loop, std::string bes_arg,
   backends =
       (http_server_handoff_data_t *)calloc(sizeof(backends[0]), nbackends);
   assert(backends != NULL);
-
+  
   for (uint32_t i = 0; i < CONN_POOL_SIZE; i++) {
     for (size_t j = 0; j < bes.size(); j++) {
       http_server_handoff_data_t *ho_data = backends + (CONN_POOL_SIZE * i + j);
@@ -100,9 +100,11 @@ start_connect_to_backends(uv_loop_t *loop, std::string bes_arg,
 int
 main(int argc, char **argv)
 {
+  fprintf(stderr,"hi!!\n");
   int error;
   uv_loop_t *loop;
 
+  // 1) parse args
   argparse::ArgumentParser parser(
       "phttp-bench-proxy", "Simple benchmark application (proxy)", "MIT");
   phttp_argparse_set_all_args(&parser);
@@ -113,17 +115,19 @@ main(int argc, char **argv)
   auto bes_arg = args.get<std::string>("backends");
   auto nworkers = args.get<uint32_t>("nworkers");
 
+  // 2) set http_server_socket's request_handler
   hss.request_handler = bench_proxy_request_handler;
 
+  // 3) set resouce limit
   struct rlimit lim;
   lim.rlim_cur = 10000;
   lim.rlim_max = 10000;
   error = setrlimit(RLIMIT_NOFILE, &lim);
   assert(error == 0);
 
-  /*
-   * Main
-   */
+  
+  // Main
+  // 4) allocate N workers
   pid_t *workers = (pid_t *)calloc(nworkers, sizeof(workers[0]));
   assert(workers != NULL);
 
