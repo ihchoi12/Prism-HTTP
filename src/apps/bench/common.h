@@ -175,7 +175,7 @@ try_connect(uv_timer_t *handle)
 
   error = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
   if (error) {
-    printf("[%d] Could not connect to proxy. Retrying...\n", getpid());
+    printf("[%d] Could not connect to proxy: %s:%d. Retrying..\n", getpid(), inet_ntoa(addr.sin_addr), htons(addr.sin_port));
     close(sock);
     return;
   }
