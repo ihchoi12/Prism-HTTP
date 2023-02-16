@@ -4,15 +4,11 @@ cd prism
 export NWORKERS=`nproc`
 export BUILD_ROOT=/homes/inho/prism
 cd $BUILD_ROOT
-
 #!/bin/bash
-
 sudo apt-get update
 sudo apt-get install -y git build-essential wget automake cmake libtool libssl-dev pkg-config libelf-dev
-
 # bcc dependencies
 sudo apt-get -y install bison build-essential cmake flex git libedit-dev libllvm6.0 llvm-6.0-dev libclang-6.0-dev python zlib1g-dev libelf-dev
-
 cd $BUILD_ROOT
 
 wget -nv https://github.com/libtom/tomsfastmath/releases/download/v0.13.1/tfm-0.13.1.tar.xz
@@ -63,17 +59,18 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
+
 tar xf tfm-0.13.1.tar.xz
 tar xf v1.18.2.tar.gz
 tar xf v1.26.0.tar.gz
 tar xf v3.6.0.1.tar.gz
 tar xf 1.21.tar.gz
-
 cd $BUILD_ROOT/bcc
 mkdir build
 cd build
 cmake ../
 make -j $NWORKERS
+chmod +222 ./
 sudo make -j $NWORKERS install
 
 cd $BUILD_ROOT/tomsfastmath-0.13.1
@@ -87,22 +84,27 @@ sudo make install
 cd $BUILD_ROOT/libuv-1.26.0
 ./autogen.sh
 ./configure
+make -j $NWORKERS install
 sudo make -j $NWORKERS install
 sudo -- sh -c "cat include/uv/unix.h | sed -e 's/netinet\/tcp.h/linux\/tcp.h/g' > /usr/local/include/uv/unix.h"
 
 cd $BUILD_ROOT/protobuf-3.6.0.1
 ./autogen.sh
 ./configure
+chmod -R +222 ./
 sudo make -j $NWORKERS install
 
 cd $BUILD_ROOT/leveldb-1.21
 mkdir build
 cd build
 cmake ../
+chmod -R +222 ./
 sudo make -j $NWORKERS install
 
 sudo ldconfig
 
+cd $BUILD_ROOT
+git clone https://github.com/ihchoi12/Prism-HTTP.git
 cd $BUILD_ROOT/Prism-HTTP/src/proto
 bash gen.sh
 
