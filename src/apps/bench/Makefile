@@ -26,3 +26,6 @@ install: phttp-bench-backend phttp-bench-proxy
 
 clean:
 	- rm $(TARGETS) $(OBJS)
+
+
+$(OBJS): common.h
