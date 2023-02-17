@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <phttp.h>
 #include <extern/tlse.h>
+#include <util.h>
 
 #include "common.h"
 
@@ -24,6 +25,8 @@ bench_proxy_request_handler(struct http_request *req, struct http_response *res,
   int error, nparsed;
 
   nparsed = sscanf(req->path, "/%lu", &objsize);
+  fprintf(stderr, "path: %s, objsize: %lu\n, nspread: %d\n", req->path, objsize, nparsed);
+  fflush(stderr);
   if (nparsed == 0) {
     res->status = 500;
     res->reason = "Internal Server Error";
@@ -100,7 +103,6 @@ start_connect_to_backends(uv_loop_t *loop, std::string bes_arg,
 int
 main(int argc, char **argv)
 {
-  fprintf(stderr,"hi!!\n");
   int error;
   uv_loop_t *loop;
 

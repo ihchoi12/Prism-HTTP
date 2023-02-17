@@ -200,6 +200,7 @@ after_configure_switch(struct psw_req_base *req, void *data)
 int
 phttp_start_handoff(uv_tcp_t *client)
 {
+  DEBUG("phttp_start_handoff2\n");
   int error;
   struct global_config *gconf = (struct global_config *)client->loop->data;
   prism_switch_client_t *sw_client = (prism_switch_client_t *)gconf->sw_client;
@@ -232,7 +233,7 @@ phttp_start_handoff(uv_tcp_t *client)
     add_req.owner_port = hcs->server_sock->server_port;
     memcpy(add_req.owner_mac, hcs->server_sock->server_mac, 6);
     add_req.lock = 1;
-
+    DEBUG("before prism_switch_client_queue_task\n");
     error = prism_switch_client_queue_task(sw_client,
                                            (struct psw_req_base *)&add_req,
                                            after_configure_switch, client);

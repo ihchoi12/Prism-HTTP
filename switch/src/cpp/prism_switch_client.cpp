@@ -117,7 +117,7 @@ retry_send(uv_timer_t *timer)
 
   uv_udp_send_t *req = (uv_udp_send_t *)malloc(sizeof(*req));
   assert(req != NULL);
-
+  fprintf(stderr,"retry uv_udp_send\n");
   error = uv_udp_send(req, &conf_req->super, &conf_req->sbuf,
       1, (const struct sockaddr *)&client->sw_addr, after_send);
   assert(error == 0);
@@ -161,7 +161,13 @@ prism_switch_client_queue_task(prism_switch_client_t *client,
   baddr.sin_family = AF_INET;
   baddr.sin_addr.s_addr = 0;
   baddr.sin_port = 0;
+  // fprintf(stderr,"trying uv_udp_bind to %s:%d\n", inet_ntoa(baddr.sin_addr), htons(baddr.sin_port));
   error = uv_udp_bind(&conf_req->super, (struct sockaddr *)&baddr, 0);
+  // struct sockaddr addr_;
+  // int len = sizeof(addr_);
+  // uv_udp_getsockname(&conf_req->super, &addr_, &len);  
+  // struct sockaddr_in *addr_in = (struct sockaddr_in *)&addr_;
+  // fprintf(stderr,"uv_udp_bind to %s:%d\n", inet_ntoa(addr_in->sin_addr), htons(addr_in->sin_port));
   assert(error == 0);
 
   error = uv_udp_recv_start(&conf_req->super, on_alloc, on_recv);
@@ -185,7 +191,7 @@ prism_switch_client_queue_task(prism_switch_client_t *client,
 
   uv_udp_send_t *sreq = (uv_udp_send_t *)malloc(sizeof(*sreq));
   assert(sreq != NULL);
-
+  fprintf(stderr,"uv_udp_send to %s:%d\n", inet_ntoa(client->sw_addr.sin_addr), htons(client->sw_addr.sin_port));
   return uv_udp_send(sreq, &conf_req->super, &conf_req->sbuf, 1,
                      (const struct sockaddr *)&client->sw_addr, after_send);
 }

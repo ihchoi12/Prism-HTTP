@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <uv.h>
 
+#define PHTTP_DEBUG
 #ifdef PHTTP_DEBUG
 #define DEBUG(_fmt, ...)                                                       \
   do {                                                                         \

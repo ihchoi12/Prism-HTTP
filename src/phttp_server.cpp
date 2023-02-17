@@ -263,6 +263,7 @@ phttp_on_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
   /*
    * Our own special status code for invoking handoff
    */
+  fprintf(stderr, "res->status: %u\n", res->status);
   if (res->status == 600) {
     error = phttp_start_handoff(client);
     if (error) {
@@ -408,6 +409,8 @@ on_connection(uv_stream_t *_server, int status)
 
   hcs->peername_cache.peer_addr = peeraddr.sin_addr.s_addr;
   hcs->peername_cache.peer_port = peeraddr.sin_port;
+  
+  printf("[%d] peer address: %s:%d\n", getpid(), inet_ntoa(peeraddr.sin_addr), htons(peeraddr.sin_port));
 }
 
 int
@@ -438,7 +441,7 @@ phttp_server_init(uv_loop_t *loop, http_server_socket_t *hss)
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = hss->server_addr;
   addr.sin_port = hss->server_port;
-
+  printf("[%d] uv_tcp_bind to %s:%d\n", getpid(), inet_ntoa(addr.sin_addr), htons(addr.sin_port));
   error = uv_tcp_bind(server, (struct sockaddr *)&addr, sizeof(addr));
   assert(error == 0);
 
