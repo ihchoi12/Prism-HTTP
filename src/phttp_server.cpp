@@ -360,6 +360,7 @@ on_tls_handshake_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
 static void
 on_connection(uv_stream_t *_server, int status)
 {
+  DEBUG("phttp_server.cpp::on_connection()\n");
   int error;
   struct sockaddr_in peeraddr;
   int peeraddr_len = sizeof(peeraddr);

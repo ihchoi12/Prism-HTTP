@@ -3,12 +3,7 @@
 #include <http_export.h>
 #include <phttp_handoff_server.h>
 #include <uv.h>
-
-static void
-uv_perror(const char *msg, int error)
-{
-  fprintf(stderr, "%s: %s\n", msg, uv_strerror(error));
-}
+#include <util.h>
 
 static void
 http_handoff_client_socket_deinit(http_handoff_client_socket_t *hhcs)
@@ -161,6 +156,7 @@ on_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
 static void
 on_connection(uv_stream_t *_server, int status)
 {
+  DEBUG("phttp_handoff_server.cpp::on_connection()\n");
   int error;
   uv_tcp_t *client = NULL;
   http_handoff_server_socket_t *hhss = NULL;

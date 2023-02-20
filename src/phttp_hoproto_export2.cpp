@@ -96,7 +96,7 @@ after_real_close(uv_tcp_monitor_t *monitor)
   ctx->buf[1].len = ctx->serialized_data->size();
   ctx->hcs = hcs;
   ctx->req.data = ctx;
-
+  DEBUG("phttp_hoproto_export2::uv_write()\n");
   error = uv_write(&ctx->req, (uv_stream_t *)&ho_data->dest, ctx->buf, 2,
                    handoff_done);
   assert(error == 0);
@@ -200,7 +200,7 @@ after_configure_switch(struct psw_req_base *req, void *data)
 int
 phttp_start_handoff(uv_tcp_t *client)
 {
-  DEBUG("phttp_start_handoff2\n");
+  DEBUG("phttp_hoproto_export2.cpp::phttp_start_handoff2\n");
   int error;
   struct global_config *gconf = (struct global_config *)client->loop->data;
   prism_switch_client_t *sw_client = (prism_switch_client_t *)gconf->sw_client;
@@ -237,6 +237,9 @@ phttp_start_handoff(uv_tcp_t *client)
     error = prism_switch_client_queue_task(sw_client,
                                            (struct psw_req_base *)&add_req,
                                            after_configure_switch, client);
+    //test
+    DEBUG("call after_configure_switch()\n");
+    after_configure_switch((struct psw_req_base *)&add_req, client);
   }
 
   return error;

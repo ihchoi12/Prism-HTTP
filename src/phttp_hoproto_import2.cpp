@@ -54,6 +54,9 @@ start_change_owner(uv_tcp_t *client)
   memcpy(chown_req.owner_mac, hss->server_mac, 6);
   chown_req.unlock = 1;
 
+  //test
+  DEBUG("call after_change_owner()\n");
+  after_change_owner((struct psw_req_base *)&chown_req, client);
   return prism_switch_client_queue_task(
       sw_client, (struct psw_req_base *)&chown_req, after_change_owner, client);
 }
@@ -209,7 +212,7 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
   ctx->buf[1].base = const_cast<char *>(ctx->serialized_data->c_str());
   ctx->buf[1].len = ctx->serialized_data->size();
   ctx->req.data = ctx;
-
+  DEBUG("phttp_hoproto_import2::uv_write()\n");
   error = uv_write(&ctx->req, (uv_stream_t *)&ho_data->dest, ctx->buf, 2,
                    forward_done);
   assert(error == 0);
@@ -220,6 +223,7 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
 int
 phttp_on_handoff(uv_tcp_t *ho_client, prism::HTTPHandoffReq *ho_req)
 {
+  DEBUG("phttp_hoproto_import2.cpp::phttp_on_handoff\n");
   int error;
 
   PROF(PROF_HANDOFF, ho_req->tcp().peer_addr(), ho_req->tcp().peer_port());
