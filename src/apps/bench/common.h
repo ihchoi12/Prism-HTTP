@@ -2,6 +2,9 @@
 
 #include <phttp.h>
 
+// #define ROOT "/var/www/demo/"
+char ROOT[64] = "/var/www/demo/"; 
+#define BUFFER_SIZE 1024
 static int
 http_server_close(uv_tcp_t *server)
 {

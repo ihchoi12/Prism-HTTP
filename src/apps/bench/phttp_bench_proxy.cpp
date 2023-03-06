@@ -21,25 +21,11 @@ static int
 bench_proxy_request_handler(struct http_request *req, struct http_response *res,
                             bool imported)
 {
-  uint64_t objsize;
-  int error, nparsed;
-
-  nparsed = sscanf(req->path, "/%lu", &objsize);
-  fprintf(stderr, "path: %s, objsize: %lu\n, nspread: %d\n", req->path, objsize, nparsed);
-  fflush(stderr);
-  if (nparsed == 0) {
-    res->status = 500;
-    res->reason = "Internal Server Error";
-    memcpy(res->body_mem.cur, "Debug: Invalid path\n", 20);
-    error = membuf_consume(&res->body_mem, 20);
-    assert(error == 0);
-  } else {
-    res->status = 600;
-    res->reason = "Handoff";
-    res->handoff_data = backends + rr_factor;
-    if (++rr_factor == nbackends) {
-      rr_factor = 0;
-    }
+  res->status = 600;
+  res->reason = "Handoff";
+  res->handoff_data = backends + rr_factor;
+  if (++rr_factor == nbackends) {
+    rr_factor = 0;
   }
 
   return 0;
