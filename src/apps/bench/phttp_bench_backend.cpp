@@ -55,6 +55,10 @@ bench_backend_request_handler(struct http_request *req,
           error = membuf_consume(&res->body_mem, nread);
       }
       assert(error == 0);
+      if (close(file_fd) == -1) {
+          perror("close");
+          exit(EXIT_FAILURE);
+      }
     }
   } else {
     res->status = 600;
