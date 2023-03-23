@@ -16,6 +16,7 @@
 #define assertf(A, M, ...) if(!(A)) {fprintf(stderr, M, ##__VA_ARGS__); assert(A); }
 #else
 #define DEBUG(_fmt, ...)
+#define assertf(A, M, ...)
 #endif
 
 static void
