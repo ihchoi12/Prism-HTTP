@@ -5,7 +5,6 @@
 #include <sys/time.h>
 #include <uv.h>
 
-#define PHTTP_DEBUG
 #ifdef PHTTP_DEBUG
 #define DEBUG(_fmt, ...)                                                       \
   do {                                                                         \
@@ -14,6 +13,7 @@
     fprintf(stderr, "%03d.%06d %s [%d] " _fmt, (int)(_t0.tv_sec % 1000),       \
             (int)_t0.tv_usec, __FUNCTION__, __LINE__, ##__VA_ARGS__);          \
   } while (0)
+#define assertf(A, M, ...) if(!(A)) {fprintf(stderr, M, ##__VA_ARGS__); assert(A); }
 #else
 #define DEBUG(_fmt, ...)
 #endif
