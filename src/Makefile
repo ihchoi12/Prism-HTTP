@@ -11,6 +11,8 @@ CPPFLAGS+= \
 	-DNO_TLS_13 \
 	-DTLS_RX \
 	-DTCP_MONITOR_USE_CREME
+# To enable profiling, add -DPHTTP_PROF=1 to CPPFLAGS
+# To enable DEBUG printing, add -DPHTTP_DEBUG=1 to CPPFLAGS
 
 CFLAGS+=$(CPPFLAGS)
 
