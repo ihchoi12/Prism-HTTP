@@ -7,7 +7,8 @@
 #include <util.h>
 
 #include <prism_switch/prism_switch_client.h>
-
+#include <chrono>
+// uint64_t start_time, end_time;
 #define PROF(_id, _peer_addr, _peer_port)                                      \
   do {                                                                         \
     prof_tstamp(PROF_TYPE_IMPORT, _id, _peer_addr, _peer_port);                \
@@ -22,8 +23,11 @@ after_change_owner(struct psw_req_base *req, void *data)
 
   assert(req->status == 0);
 
-  PROF(PROF_CHOWN, hcs->peername_cache.peer_addr,
-       hcs->peername_cache.peer_port);
+  // PROF(PROF_CHOWN, hcs->peername_cache.peer_addr,
+  //      hcs->peername_cache.peer_port);
+  // prof_end_tstamp(PROF_CHOWN, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
 
   error = uv_read_start((uv_stream_t *)client, phttp_on_alloc, phttp_on_read);
   assert(error == 0);
@@ -53,10 +57,10 @@ start_change_owner(uv_tcp_t *client)
   chown_req.owner_port = hss->server_port;
   memcpy(chown_req.owner_mac, hss->server_mac, 6);
   chown_req.unlock = 1;
-
+  DEBUG("psw_chown_req setup\n");
   //test
-  DEBUG("call after_change_owner()\n");
-  after_change_owner((struct psw_req_base *)&chown_req, client);
+  // DEBUG("call after_change_owner()\n");
+  // after_change_owner((struct psw_req_base *)&chown_req, client);
   return prism_switch_client_queue_task(
       sw_client, (struct psw_req_base *)&chown_req, after_change_owner, client);
 }
@@ -80,7 +84,9 @@ forward_done(uv_write_t *req, int status)
 
   assert(status == 0);
 
-  PROF(PROF_FORWARDING, ctx->peer_addr, ctx->peer_port);
+  // PROF(PROF_FORWARDING, ctx->peer_addr, ctx->peer_port);
+  // prof_end_tstamp(PROF_FORWARDING, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   delete ctx->serialized_data;
   free(ctx->buf[0].base);
@@ -108,6 +114,7 @@ import_tcp(uv_loop_t *loop, uv_tcp_t **tcp, const prism::TCPState *tcp_state)
   assert(error == 0);
 
   int sock = socket(AF_INET, SOCK_STREAM, 0);
+  assertf(sock != -1, "Error-code: %d: %s\n", errno, strerror(errno));
   assert(sock != -1);
 
   error = tcp_import(sock, tcp_state);
@@ -161,17 +168,21 @@ continue_import(uv_loop_t *loop, uv_tcp_t **client,
   error = import_tcp(loop, client, &ho_req->tcp());
   assert(error == 0);
 
-  PROF(PROF_IMPORT_TCP, hcs->peername_cache.peer_addr,
-       hcs->peername_cache.peer_addr);
+  // PROF(PROF_IMPORT_TCP, hcs->peername_cache.peer_addr,
+  //      hcs->peername_cache.peer_port);
+  // prof_end_tstamp(PROF_IMPORT_TCP, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
 
   error = uv_tcp_monitor_init(loop, &hcs->monitor, *client);
+  assertf(error == 0, "Error-code: %d: %s\n", errno, strerror(errno));
   assert(error == 0);
 
   if (ho_req->has_tls()) {
     error = import_tls(*client, &hcs->tls, &ho_req->tls());
     assert(error == 0);
-    PROF(PROF_IMPORT_TLS, hcs->peername_cache.peer_addr,
-         hcs->peername_cache.peer_port);
+    // PROF(PROF_IMPORT_TLS, hcs->peername_cache.peer_addr,
+    //      hcs->peername_cache.peer_port);
   }
 
   (*client)->data = hcs;
@@ -196,7 +207,10 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
   ctx->serialized_data = new std::string(ho_req->ByteSizeLong(), '\0');
   serialize_ok = ho_req->SerializeToString(ctx->serialized_data);
   assert(serialize_ok);
-  PROF(PROF_SERIALIZE, ctx->peer_addr, ctx->peer_port);
+  // PROF(PROF_SERIALIZE, ctx->peer_addr, ctx->peer_port);
+  // prof_end_tstamp(PROF_SERIALIZE, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
 
   uint32_t padlen = ctx->serialized_data->size() % 8 == 0
                         ? 0
@@ -212,7 +226,7 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
   ctx->buf[1].base = const_cast<char *>(ctx->serialized_data->c_str());
   ctx->buf[1].len = ctx->serialized_data->size();
   ctx->req.data = ctx;
-  DEBUG("phttp_hoproto_import2::uv_write()\n");
+  // DEBUG("phttp_hoproto_import2::uv_write()\n");
   error = uv_write(&ctx->req, (uv_stream_t *)&ho_data->dest, ctx->buf, 2,
                    forward_done);
   assert(error == 0);
@@ -223,10 +237,11 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
 int
 phttp_on_handoff(uv_tcp_t *ho_client, prism::HTTPHandoffReq *ho_req)
 {
-  DEBUG("phttp_hoproto_import2.cpp::phttp_on_handoff\n");
+  DEBUG("phttp_hoproto_import2.cpp::phttp_on_handoff -- received tcp and request from origin\n");
   int error;
 
-  PROF(PROF_HANDOFF, ho_req->tcp().peer_addr(), ho_req->tcp().peer_port());
+  // PROF(PROF_HANDOFF, ho_req->tcp().peer_addr(), ho_req->tcp().peer_port());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   /*
    * First, import only http request and invoke request handler.
@@ -241,7 +256,9 @@ phttp_on_handoff(uv_tcp_t *ho_client, prism::HTTPHandoffReq *ho_req)
   error = http_request_import(req, &ho_req->http());
   assert(error == 0);
 
-  PROF(PROF_IMPORT_HTTP, ho_req->tcp().peer_addr(), ho_req->tcp().peer_port());
+  // PROF(PROF_IMPORT_HTTP, ho_req->tcp().peer_addr(), ho_req->tcp().peer_port());
+  // prof_end_tstamp(PROF_IMPORT_HTTP, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   struct http_response *res = (struct http_response *)malloc(sizeof(*res));
   assert(res != NULL);
@@ -252,8 +269,11 @@ phttp_on_handoff(uv_tcp_t *ho_client, prism::HTTPHandoffReq *ho_req)
   error = hss->request_handler(req, res, true);
   assert(error == 0);
 
-  PROF(PROF_HANDLE_HTTP_REQ, ho_req->tcp().peer_addr(),
-       ho_req->tcp().peer_port());
+  // PROF(PROF_HANDLE_HTTP_REQ, ho_req->tcp().peer_addr(),
+  //      ho_req->tcp().peer_port());
+  // prof_end_tstamp(PROF_HANDLE_HTTP_REQ, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
 
   /*
    * Handler returned ordinal http response. Import
@@ -292,7 +312,7 @@ phttp_on_handoff(uv_tcp_t *ho_client, prism::HTTPHandoffReq *ho_req)
 
   assert(res->status == 600);
 
-  DEBUG("3. Forward protocol states\n");
+  // DEBUG("3. Forward protocol states\n");
 
   error = forward_proto_states(res, ho_req);
   assert(error == 0);

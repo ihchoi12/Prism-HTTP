@@ -9,6 +9,8 @@
 #include <util.h>
 
 #include <prism_switch/prism_switch_client.h>
+#include <chrono>
+uint64_t start_time, end_time;
 
 #define PROF(_id)                                                              \
   do {                                                                         \
@@ -48,7 +50,8 @@ handoff_done(uv_write_t *req, int status)
 
   assert(status == 0);
 
-  PROF(PROF_SEND_PROTO_STATES);
+  // PROF(PROF_SEND_PROTO_STATES);
+  // prof_end_tstamp(PROF_SEND_PROTO_STATES, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   delete ctx->serialized_data;
   free(ctx->buf[0].base);
@@ -71,15 +74,19 @@ after_real_close(uv_tcp_monitor_t *monitor)
       (http_server_handoff_data_t *)hcs->res.handoff_data;
   prism::HTTPHandoffReq *ho_req = (prism::HTTPHandoffReq *)hcs->export_data;
 
-  PROF(PROF_TCP_CLOSE);
-
+  // PROF(PROF_TCP_CLOSE);
+  // prof_end_tstamp(PROF_TCP_CLOSE, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
   struct handoff_ctx *ctx = (struct handoff_ctx *)malloc(sizeof(*ctx));
   assert(ctx != NULL);
 
   ctx->serialized_data = new std::string(ho_req->ByteSizeLong(), '\0');
   serialize_ok = ho_req->SerializeToString(ctx->serialized_data);
   assert(serialize_ok);
-  PROF(PROF_SERIALIZE);
+  // PROF(PROF_SERIALIZE);
+  // prof_end_tstamp(PROF_SERIALIZE, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   uint32_t padlen = ctx->serialized_data->size() % 8 == 0
                         ? 0
@@ -96,7 +103,7 @@ after_real_close(uv_tcp_monitor_t *monitor)
   ctx->buf[1].len = ctx->serialized_data->size();
   ctx->hcs = hcs;
   ctx->req.data = ctx;
-  DEBUG("phttp_hoproto_export2::uv_write()\n");
+  DEBUG("phttp_hoproto_export2::uv_write() -- migrate tcp and request to target\n");
   error = uv_write(&ctx->req, (uv_stream_t *)&ho_data->dest, ctx->buf, 2,
                    handoff_done);
   assert(error == 0);
@@ -141,7 +148,10 @@ export_all(uv_tcp_t *client, prism::HTTPHandoffReq **ho_reqp)
   error = export_tcp(sock, tcp);
   assert(error == 0);
   ho_req->set_allocated_tcp(tcp);
-  PROF(PROF_EXPORT_TCP);
+  // PROF(PROF_EXPORT_TCP);
+  // prof_end_tstamp(PROF_EXPORT_TCP, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
 
   if (hcs->tls != NULL) {
     tls = new prism::TLSState();
@@ -155,8 +165,10 @@ export_all(uv_tcp_t *client, prism::HTTPHandoffReq **ho_reqp)
   error = export_http(&hcs->req, http);
   assert(error == 0);
   ho_req->set_allocated_http(http);
-  PROF(PROF_EXPORT_HTTP);
-
+  // PROF(PROF_EXPORT_HTTP);
+  // prof_end_tstamp(PROF_EXPORT_HTTP, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
   *ho_reqp = ho_req;
 
   return 0;
@@ -183,9 +195,11 @@ after_configure_switch(struct psw_req_base *req, void *data)
   assert(req->status == 0);
 
   if (req->type == PSW_REQ_ADD) {
-    PROF(PROF_ADD);
+    // PROF(PROF_ADD);
   } else {
-    PROF(PROF_LOCK);
+    // PROF(PROF_LOCK);
+    // prof_end_tstamp(PROF_LOCK, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   }
 
   prism::HTTPHandoffReq *ho_req;
@@ -206,7 +220,8 @@ phttp_start_handoff(uv_tcp_t *client)
   prism_switch_client_t *sw_client = (prism_switch_client_t *)gconf->sw_client;
   http_client_socket_t *hcs = (http_client_socket_t *)client->data;
 
-  PROF(PROF_RECEIVE_HTTP_REQ);
+  // PROF(PROF_RECEIVE_HTTP_REQ);
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   error = uv_read_stop((uv_stream_t *)client);
   assert(error == 0);
@@ -217,7 +232,7 @@ phttp_start_handoff(uv_tcp_t *client)
     lock_req.status = 0;
     lock_req.peer_addr = hcs->peername_cache.peer_addr;
     lock_req.peer_port = hcs->peername_cache.peer_port;
-
+    DEBUG("psw_lock_req setup\n");
     error = prism_switch_client_queue_task(sw_client,
                                            (struct psw_req_base *)&lock_req,
                                            after_configure_switch, client);
@@ -233,13 +248,13 @@ phttp_start_handoff(uv_tcp_t *client)
     add_req.owner_port = hcs->server_sock->server_port;
     memcpy(add_req.owner_mac, hcs->server_sock->server_mac, 6);
     add_req.lock = 1;
-    DEBUG("before prism_switch_client_queue_task\n");
+    DEBUG("psw_add_req setup\n");
     error = prism_switch_client_queue_task(sw_client,
                                            (struct psw_req_base *)&add_req,
                                            after_configure_switch, client);
     //test
-    DEBUG("call after_configure_switch()\n");
-    after_configure_switch((struct psw_req_base *)&add_req, client);
+    // DEBUG("call after_configure_switch()\n");
+    // after_configure_switch((struct psw_req_base *)&add_req, client);
   }
 
   return error;

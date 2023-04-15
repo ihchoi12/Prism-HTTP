@@ -82,6 +82,7 @@ struct forward_ctx {
 static void
 forward_done(uv_write_t *req, int status)
 {
+  DEBUG("phttp_hoproto_import.cpp::forward_done()\n");
   struct forward_ctx *ctx = (struct forward_ctx *)req->data;
   assert(status == 0);
 
@@ -167,7 +168,7 @@ continue_import(uv_loop_t *loop, uv_tcp_t **client,
   assert(error == 0);
 
   PROF(PROF_IMPORT_TCP, hcs->peername_cache.peer_addr,
-       hcs->peername_cache.peer_addr);
+       hcs->peername_cache.peer_port);
 
   error = uv_tcp_monitor_init(loop, &hcs->monitor, *client);
   assert(error == 0);
@@ -212,7 +213,7 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
   ctx->buf[1].base = const_cast<char *>(ctx->serialized_data->c_str());
   ctx->buf[1].len = ctx->serialized_data->size();
   ctx->req.data = ctx;
-
+  DEBUG("phttp_hoproto_import.cpp::forward_done()\n");
   error = uv_write(&ctx->req, (uv_stream_t *)&ho_data->dest, ctx->buf, 2,
                    forward_done);
   assert(error == 0);

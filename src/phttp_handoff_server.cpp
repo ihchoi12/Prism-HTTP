@@ -241,6 +241,7 @@ phttp_handoff_server_init(uv_loop_t *loop, http_handoff_server_socket_t *hhss)
   addr.sin_addr.s_addr = hhss->server_addr;
   addr.sin_port = hhss->server_port;
 
+  DEBUG("[%d] uv_tcp_bind to %s:%d\n", getpid(), inet_ntoa(addr.sin_addr), htons(addr.sin_port));
   error = uv_tcp_bind(server, (struct sockaddr *)&addr, sizeof(addr));
   assert(error == 0);
 

@@ -42,7 +42,7 @@ handoff_done(uv_write_t *req, int status)
 
   assert(status == 0);
 
-  PROF(PROF_SEND_PROTO_STATES);
+  // PROF(PROF_SEND_PROTO_STATES);
 
   delete ctx->serialized_data;
   free(ctx->buf[0].base);
@@ -66,7 +66,7 @@ after_close_tcp(uv_tcp_monitor_t *monitor)
       (http_server_handoff_data_t *)hcs->res.handoff_data;
   prism::HTTPHandoffReq *ho_req = (prism::HTTPHandoffReq *)monitor->super.data;
 
-  PROF(PROF_TCP_CLOSE);
+  // PROF(PROF_TCP_CLOSE);
 
   struct handoff_ctx *ctx = (struct handoff_ctx *)malloc(sizeof(*ctx));
   assert(ctx != NULL);
@@ -74,7 +74,7 @@ after_close_tcp(uv_tcp_monitor_t *monitor)
   ctx->serialized_data = new std::string();
   serialize_ok = ho_req->SerializeToString(ctx->serialized_data);
   assert(serialize_ok);
-  PROF(PROF_SERIALIZE);
+  // PROF(PROF_SERIALIZE);
 
   uint32_t *buflen = (uint32_t *)malloc(sizeof(uint32_t));
   assert(buflen != NULL);
@@ -131,21 +131,21 @@ export_all(uv_tcp_t *client, prism::HTTPHandoffReq **ho_reqp)
   error = export_tcp(sock, tcp);
   assert(error == 0);
   ho_req->set_allocated_tcp(tcp);
-  PROF(PROF_EXPORT_TCP);
+  // PROF(PROF_EXPORT_TCP);
 
   if (hcs->tls != NULL) {
     tls = new prism::TLSState();
     error = export_tls(sock, hcs->tls, tls);
     assert(error == 0);
     ho_req->set_allocated_tls(tls);
-    PROF(PROF_EXPORT_TLS);
+    // PROF(PROF_EXPORT_TLS);
   }
 
   http = new prism::HTTPReq();
   error = export_http(&hcs->req, http);
   assert(error == 0);
   ho_req->set_allocated_http(http);
-  PROF(PROF_EXPORT_HTTP);
+  // PROF(PROF_EXPORT_HTTP);
 
   *ho_reqp = ho_req;
 
@@ -162,7 +162,7 @@ after_add_switch_rule(uv_work_t *_work, int status)
 
   assert(status == 0 && work->status == 0);
 
-  PROF(PROF_ADD);
+  // PROF(PROF_ADD);
 
   free(work);
 
@@ -184,7 +184,7 @@ after_lock_switch_rule(uv_work_t *_work, int status)
 
   assert(status == 0 && work->status == 0);
 
-  PROF(PROF_LOCK);
+  // PROF(PROF_LOCK);
 
   free(work);
 

@@ -17,7 +17,7 @@
 
 #define PROF(_id)                                                              \
   do {                                                                         \
-    prof_tstamp(PROF_TYPE_EXPORT, _id, hcs->peername_cache.peer_addr,          \
+    prof_tstamp(PROF_TYPE_IMPORT, _id, hcs->peername_cache.peer_addr,          \
                 hcs->peername_cache.peer_port);                                \
   } while (0)
 
@@ -90,7 +90,7 @@ after_send_http_res(uv_write_t *wreq, int status)
 
   assert(status == 0);
 
-  PROF(PROF_HTTP_RES);
+  // PROF(PROF_HTTP_RES);
 
   if (res->after_res) {
     res->after_res(res);
@@ -115,6 +115,7 @@ after_send_continue_res(uv_write_t *wreq, int status)
 int
 phttp_send_http_res(uv_tcp_t *client, bool continue_res)
 {
+  DEBUG("phttp_send_http_res()\n");
   int error, nprinted;
   http_client_socket_t *hcs = (http_client_socket_t *)client->data;
   struct http_response *res = &hcs->res;
@@ -183,6 +184,7 @@ phttp_send_http_res(uv_tcp_t *client, bool continue_res)
 void
 phttp_on_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
 {
+  DEBUG("phttp_server.cpp::phttp_on_read(), nread: %lu\n", nread);
   int error, nparsed;
   uint64_t body_len;
   uv_tcp_t *client = (uv_tcp_t *)_client;
@@ -195,7 +197,7 @@ phttp_on_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
     return;
   }
 
-  if (nread < 0) {
+  if (nread < 0) { // ex. the received segement is FIN
     uv_perror("on_read", (int)nread);
     hcs->hs.close(client);
     return;
@@ -263,7 +265,7 @@ phttp_on_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
   /*
    * Our own special status code for invoking handoff
    */
-  fprintf(stderr, "res->status: %u\n", res->status);
+  DEBUG("res->status: %u\n", res->status);
   if (res->status == 600) {
     error = phttp_start_handoff(client);
     if (error) {
@@ -411,7 +413,7 @@ on_connection(uv_stream_t *_server, int status)
   hcs->peername_cache.peer_addr = peeraddr.sin_addr.s_addr;
   hcs->peername_cache.peer_port = peeraddr.sin_port;
   
-  printf("[%d] peer address: %s:%d\n", getpid(), inet_ntoa(peeraddr.sin_addr), htons(peeraddr.sin_port));
+  DEBUG("[%d] peer address: %s:%d\n", getpid(), inet_ntoa(peeraddr.sin_addr), htons(peeraddr.sin_port));
 }
 
 int
@@ -442,11 +444,12 @@ phttp_server_init(uv_loop_t *loop, http_server_socket_t *hss)
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = hss->server_addr;
   addr.sin_port = hss->server_port;
-  printf("[%d] uv_tcp_bind to %s:%d\n", getpid(), inet_ntoa(addr.sin_addr), htons(addr.sin_port));
+  DEBUG("[%d] uv_tcp_bind to %s:%d\n", getpid(), inet_ntoa(addr.sin_addr), htons(addr.sin_port));
   error = uv_tcp_bind(server, (struct sockaddr *)&addr, sizeof(addr));
   assert(error == 0);
 
   error = uv_listen((uv_stream_t *)server, hss->backlog, on_connection);
+  assertf(error == 0, "Error-code: %d: %s\n", errno, strerror(errno));
   assert(error == 0);
 
   return 0;

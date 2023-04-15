@@ -1,7 +1,7 @@
 #include <cassert>
 #include <unistd.h>
 #include <phttp_server.h>
-
+#include <util.h>
 #define container_of(ptr, type, member) ({                      \
         const typeof( ((type *)0)->member ) *__mptr = (ptr); \
         (type *)( (char *)__mptr - offsetof(type,member) );})
@@ -19,6 +19,7 @@ after_close_tcp_monitor(uv_handle_t *_monitor)
 static void
 after_real_close_imported(uv_tcp_monitor_t *monitor)
 {
+  DEBUG("phttp_hoproto_close2.cpp::after_real_close_imported\n");
   int error;
   http_client_socket_t *hcs = container_of(monitor, http_client_socket_t, monitor);  // TODO Fix this
   struct global_config *gconf = (struct global_config *)monitor->super.loop->data;
@@ -33,7 +34,7 @@ after_real_close_imported(uv_tcp_monitor_t *monitor)
   del_req.status = 0;
   del_req.peer_addr = hcs->peername_cache.peer_addr;
   del_req.peer_port = hcs->peername_cache.peer_port;
-
+  DEBUG("psw_del_req setup\n");
   error = prism_switch_client_queue_task(
       sw_client, (struct psw_req_base *)&del_req, NULL, NULL);
   assert(error == 0);
