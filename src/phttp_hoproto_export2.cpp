@@ -41,6 +41,8 @@ after_close_tcp_monitor(uv_handle_t *_monitor)
 static void
 handoff_done(uv_write_t *req, int status)
 {
+  prof_end_tstamp(PROF_SEND_PROTO_STATES, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+
   struct handoff_ctx *ctx = (struct handoff_ctx *)req->data;
   http_client_socket_t *hcs = ctx->hcs;
 
@@ -51,8 +53,7 @@ handoff_done(uv_write_t *req, int status)
   assert(status == 0);
 
   // PROF(PROF_SEND_PROTO_STATES);
-  // prof_end_tstamp(PROF_SEND_PROTO_STATES, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-
+  
   delete ctx->serialized_data;
   free(ctx->buf[0].base);
   free(ctx);
@@ -75,8 +76,8 @@ after_real_close(uv_tcp_monitor_t *monitor)
   prism::HTTPHandoffReq *ho_req = (prism::HTTPHandoffReq *)hcs->export_data;
 
   // PROF(PROF_TCP_CLOSE);
-  // prof_end_tstamp(PROF_TCP_CLOSE, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_end_tstamp(PROF_TCP_CLOSE, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
   struct handoff_ctx *ctx = (struct handoff_ctx *)malloc(sizeof(*ctx));
   assert(ctx != NULL);
@@ -85,8 +86,8 @@ after_real_close(uv_tcp_monitor_t *monitor)
   serialize_ok = ho_req->SerializeToString(ctx->serialized_data);
   assert(serialize_ok);
   // PROF(PROF_SERIALIZE);
-  // prof_end_tstamp(PROF_SERIALIZE, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  prof_end_tstamp(PROF_SERIALIZE, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   uint32_t padlen = ctx->serialized_data->size() % 8 == 0
                         ? 0
@@ -149,8 +150,8 @@ export_all(uv_tcp_t *client, prism::HTTPHandoffReq **ho_reqp)
   assert(error == 0);
   ho_req->set_allocated_tcp(tcp);
   // PROF(PROF_EXPORT_TCP);
-  // prof_end_tstamp(PROF_EXPORT_TCP, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_end_tstamp(PROF_EXPORT_TCP, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
 
   if (hcs->tls != NULL) {
@@ -166,8 +167,8 @@ export_all(uv_tcp_t *client, prism::HTTPHandoffReq **ho_reqp)
   assert(error == 0);
   ho_req->set_allocated_http(http);
   // PROF(PROF_EXPORT_HTTP);
-  // prof_end_tstamp(PROF_EXPORT_HTTP, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_end_tstamp(PROF_EXPORT_HTTP, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
   *ho_reqp = ho_req;
 
@@ -198,8 +199,8 @@ after_configure_switch(struct psw_req_base *req, void *data)
     // PROF(PROF_ADD);
   } else {
     // PROF(PROF_LOCK);
-    // prof_end_tstamp(PROF_LOCK, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    prof_end_tstamp(PROF_LOCK, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   }
 
   prism::HTTPHandoffReq *ho_req;
@@ -214,14 +215,15 @@ after_configure_switch(struct psw_req_base *req, void *data)
 int
 phttp_start_handoff(uv_tcp_t *client)
 {
+  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   DEBUG("phttp_hoproto_export2.cpp::phttp_start_handoff2\n");
   int error;
   struct global_config *gconf = (struct global_config *)client->loop->data;
   prism_switch_client_t *sw_client = (prism_switch_client_t *)gconf->sw_client;
   http_client_socket_t *hcs = (http_client_socket_t *)client->data;
 
-  // PROF(PROF_RECEIVE_HTTP_REQ);
-  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  PROF(PROF_RECEIVE_HTTP_REQ);
+  
 
   error = uv_read_stop((uv_stream_t *)client);
   assert(error == 0);
