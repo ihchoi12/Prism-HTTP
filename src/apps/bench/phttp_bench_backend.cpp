@@ -28,38 +28,45 @@ static int
 bench_backend_request_handler(struct http_request *req,
                               struct http_response *res, bool imported)
 {
+  static char file_contents[BUFFER_SIZE]; // Static variable to store the file contents
+  static int initialized = 0; // Flag to check if the file has been read
+
   int error, file_fd;
   if (imported) {
-    char filename[64] = {0}, fullpath[256];
-    sscanf(req->path, "/%s", filename);
-    
-    if(strcmp(filename, "HTTP/1.1") == 0){ // if request doesn't specify file name, serve index.html by default
-      sprintf(fullpath, "%s/%s", ROOT, "index.html");
-    }else{
-      sprintf(fullpath, "%s/%s", ROOT, filename);
-    }
-    file_fd = open(fullpath, O_RDONLY);
-    if (file_fd == -1) {
-      //File not found
-      res->status = 500;
-      res->reason = "Internal Server Error";
-      memcpy(res->body_mem.cur, "Debug: Invalid path\n", 20);
-      error = membuf_consume(&res->body_mem, 20);
-      assert(error == 0);
+    if (!initialized) {
+      char *fullpath = "/var/www/demo/index.html";
+      file_fd = open(fullpath, O_RDONLY);
+      if (file_fd == -1) {
+        //File not found
+        res->status = 500;
+        res->reason = "Internal Server Error";
+        memcpy(res->body_mem.cur, "Debug: Invalid path\n", 20);
+        error = membuf_consume(&res->body_mem, 20);
+        assert(error == 0);
+      }else {
+        // File found, send response
+        res->status = 200;
+        res->reason = "OK";
+        int nread;
+        while((nread = read(file_fd, res->body_mem.cur, BUFFER_SIZE)) > 0) {
+            memcpy(file_contents, res->body_mem.cur, nread);
+            error = membuf_consume(&res->body_mem, nread);
+        }
+        assert(error == 0);
+        if (close(file_fd) == -1) {
+            perror("close");
+            exit(EXIT_FAILURE);
+        }
+        initialized = 1; 
+      }
     }else {
-      // File found, send response
       res->status = 200;
       res->reason = "OK";
-      int nread;
-      while((nread = read(file_fd, res->body_mem.cur, BUFFER_SIZE)) > 0) {
-          error = membuf_consume(&res->body_mem, nread);
-      }
+      memcpy(res->body_mem.cur, file_contents, strlen(file_contents));
+      error = membuf_consume(&res->body_mem, strlen(file_contents));
       assert(error == 0);
-      if (close(file_fd) == -1) {
-          perror("close");
-          exit(EXIT_FAILURE);
-      }
     }
+
   } else {
     res->status = 600;
     res->reason = "Handoff";
