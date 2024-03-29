@@ -17,7 +17,7 @@
 static void
 after_change_owner(struct psw_req_base *req, void *data)
 {
-  prof_end_tstamp(PROF_CHOWN, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_end_tstamp(PROF_CHOWN, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
   int error;
   uv_tcp_t *client = (uv_tcp_t *)data;
@@ -29,9 +29,10 @@ after_change_owner(struct psw_req_base *req, void *data)
   //      hcs->peername_cache.peer_port);
   // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
-
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   error = uv_read_start((uv_stream_t *)client, phttp_on_alloc, phttp_on_read);
   assert(error == 0);
+  // prof_end_tstamp(PROF_TCP_READ_START, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
   error = phttp_send_http_res(client, false);
   assert(error == 0);
@@ -165,17 +166,15 @@ continue_import(uv_loop_t *loop, uv_tcp_t **client,
 
   hcs->peername_cache.peer_addr = ho_req->tcp().peer_addr();
   hcs->peername_cache.peer_port = ho_req->tcp().peer_port();
-
+  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   error = import_tcp(loop, client, &ho_req->tcp());
+  prof_end_tstamp(PROF_IMPORT_1, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
   assert(error == 0);
-
   // PROF(PROF_IMPORT_TCP, hcs->peername_cache.peer_addr,
   //      hcs->peername_cache.peer_port);
-  prof_end_tstamp(PROF_IMPORT_TCP, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-  
-
   error = uv_tcp_monitor_init(loop, &hcs->monitor, *client);
+  
   assertf(error == 0, "Error-code: %d: %s\n", errno, strerror(errno));
   assert(error == 0);
 
@@ -238,8 +237,6 @@ forward_proto_states(struct http_response *res, prism::HTTPHandoffReq *ho_req)
 int
 phttp_on_handoff(uv_tcp_t *ho_client, prism::HTTPHandoffReq *ho_req)
 {
-  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-
   DEBUG("phttp_hoproto_import2.cpp::phttp_on_handoff -- received tcp and request from origin\n");
   int error;
 

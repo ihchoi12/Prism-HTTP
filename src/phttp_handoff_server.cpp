@@ -4,6 +4,7 @@
 #include <phttp_handoff_server.h>
 #include <uv.h>
 #include <util.h>
+#include <phttp_prof.h>
 
 static void
 http_handoff_client_socket_deinit(http_handoff_client_socket_t *hhcs)
@@ -135,8 +136,11 @@ on_read(uv_stream_t *_client, ssize_t nread, const uv_buf_t *buf)
     }
 
     cursor += sizeof(uint32_t) + padlen;
-
+    //Deserialize
+    // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
     bool done = req->ParseFromString(std::string(cursor, buflen));
+    // prof_end_tstamp(PROF_DESERIALIZE, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
     assert(done);
 
     cursor += buflen;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-
+#include <vector>
 enum prof_types { PROF_TYPE_EXPORT, PROF_TYPE_IMPORT };
 
 enum prof_ids {
@@ -27,15 +27,40 @@ enum prof_ids {
   PROF_HTTP_RES
 };
 
+enum prof_cpu_ovhd_ids {
+  /* Export side */
+  PROF_EXPORT_1,
+  PROF_EXPORT_2,
+  PROF_EXPORT_3,
+  PROF_EXPORT_4,
+  PROF_EXPORT_5,
+  
+  /* Import side */
+  PROF_IMPORT_1,
+};
+
+static const char* prof_cpu_ovhd_id_names[] = {
+   /* Export side */
+  "PROF_EXPORT_1",
+  "PROF_EXPORT_2",
+  "PROF_EXPORT_3",
+  "PROF_EXPORT_4",
+  "PROF_EXPORT_5",
+  
+  /* Import side */
+  "PROF_IMPORT_1",
+};
+
+
 struct prof {
   enum prof_ids id;
   uint32_t peer_addr;
   uint16_t peer_port;
   struct timeval tstamp;
 };
-
 void prof_start_tstamp(uint64_t tstamp);
-void prof_end_tstamp(enum prof_ids id, uint64_t tstamp);
+void prof_end_tstamp(enum prof_cpu_ovhd_ids id, uint64_t tstamp);
 
 void prof_tstamp(enum prof_types type, enum prof_ids id, uint32_t peer_addr,
                  uint16_t peer_port);
+void prof_print_result();

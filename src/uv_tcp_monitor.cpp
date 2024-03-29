@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include <phttp_prof.h>
+#include <chrono>
 #include <uv_tcp_monitor.h>
 
 int
@@ -81,6 +83,8 @@ err0:
 static void
 uv_tcp_monitor_on_tcp_close(uv_poll_t *handle, int status, int events)
 {
+  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
   int fd;
 
   if (status < 0) {
@@ -90,7 +94,6 @@ uv_tcp_monitor_on_tcp_close(uv_poll_t *handle, int status, int events)
   if (!(events & UV_READABLE)) {
     fprintf(stderr, "Unexpected event %d detected\n", events);
   }
-
   uv_fileno((uv_handle_t *)handle, &fd);
 
   uint64_t counter;
@@ -108,6 +111,8 @@ uv_tcp_monitor_on_tcp_close(uv_poll_t *handle, int status, int events)
 #ifdef TCP_MONITOR_USE_CREME
   close(monitor->creme_fd);
 #endif
+  prof_end_tstamp(PROF_EXPORT_4, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  
   monitor->saved_close(monitor);
 }
 

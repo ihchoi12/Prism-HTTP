@@ -1,7 +1,7 @@
 #pragma once
 
 #include <phttp.h>
-
+#include <phttp_prof.h>
 // #define ROOT "/var/www/demo/"
 char ROOT[64] = "/var/www/demo/"; 
 #define BUFFER_SIZE 1024
@@ -156,6 +156,7 @@ static void
 on_sig(uv_signal_t *handle, int signal)
 {
   printf("Caught SIGINT!\n");
+  prof_print_result();
   uv_print_all_handles(handle->loop, stdout);
   printf("\n");
   uv_walk(handle->loop, on_walk, NULL);
