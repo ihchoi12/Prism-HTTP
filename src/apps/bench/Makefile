@@ -12,10 +12,13 @@ include $(TOPDIR)/src/Makefile.inc
 OBJS:= phttp_bench_backend.o phttp_bench_proxy.o
 TARGETS:= phttp-bench-backend phttp-bench-proxy
 
+CPPFLAGS+= \
+	-DPHTTP_DEBUG 
+
 all: $(TARGETS)
 
 phttp-bench-backend: phttp_bench_backend.o $(TOPDIR)/src/libphttp.a
-	$(CXX) $(CPPFLAGS) -DPHTTP_DEBUG -o $@ $^ $(LDLIBS)
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDLIBS)
 
 phttp-bench-proxy: phttp_bench_proxy.o $(TOPDIR)/src/libphttp.a
 	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDLIBS)

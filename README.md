@@ -1,3 +1,45 @@
+# Commands:
+sudo phttp-bench-proxy --addr 10.0.1.8 --port 10000 --mac 08:c0:eb:b6:e8:05 --backlog 8192 --ho-addr 10.0.1.8 --ho-port 10001 --ho-backlog 64 --sw-addr 10.0.1.7 --sw-port 18080 --backends 10.0.1.9:10000 --tls --tls-crt ~/tls/svr.crt --tls-key ~/tls/svr.key --nworkers 1
+
+sudo phttp-bench-backend --addr 10.0.1.9 --port 80 --mac 08:c0:eb:b6:c5:ad --backlog 8192 --ho-addr 10.0.1.9 --ho-port 10000 --ho-backlog 64 --sw-addr 10.0.1.7 --sw-port 18080 --proxy-addr 10.0.1.8 --proxy-port 10001 --tls --tls-crt /dev/null --tls-key /dev/null --nworkers 1
+
+
+# TLS 
+### setup
+1. Client on 10.0.1.7, Server on 10.0.1.8:10000
+2. The Prism server node's kernel version must be `5.9.0-rc1`, because Prism nodes (frontend and backend nodes) requires the net-next kernel to use getsockopt(TLS_RX). 
+
+### Prepare certificate files
+1. Generate CA key
+`openssl genrsa -out CA.key 2048`
+2. Generate self-signed CA.pem (just presss Enter to all prompt questions)
+`openssl req -x509 -new -nodes -key CA.key -days 3650 -out CA.pem`
+3. Generate server key
+`openssl genrsa -out svr.key 2048`
+4. Generate server CSR (Certificate Signing Request) (Common Name (e.g. server FQDN or YOUR name) []:10.0.1.8:10000, otherwise just presss Enter to all prompt questions)
+`openssl req -new -key svr.key -out svr.csr`
+5. Generate server certificate signed by CA
+`openssl x509 -req -in svr.csr -CA CA.pem -CAkey CA.key -CAcreateserial -out svr.crt -days 365`
+6. Test
+On node8: `python3 server.py`
+On node7: `python3 client.py`
+==> You will see the server can print out the HTTP request sent by the client
+7. Now, run Prism with TLS
+IMPORTANT: the permission of certificate files should be `-rw-r--r--` so that the Prism process can read those : `chmod 644 ./svr.key`
+On node8: `sudo phttp-bench-proxy --addr 10.0.1.8 --port 10000 --mac 08:c0:eb:b6:e8:05 --backlog 8192 --ho-addr 10.0.1.8 --ho-port 10001 --ho-backlog 64 --sw-addr 10.0.1.7 --sw-port 18080 --backends 10.0.1.9:10000 --tls --tls-crt ~/tls/svr.crt --tls-key ~/tls/svr.key --nworkers 1`
+On node9: `sudo phttp-bench-backend --addr 10.0.1.9 --port 80 --mac 08:c0:eb:b6:c5:ad --backlog 8192 --ho-addr 10.0.1.9 --ho-port 10000 --ho-backlog 64 --sw-addr 10.0.1.7 --sw-port 18080 --proxy-addr 10.0.1.8 --proxy-port 10001 --tls --tls-crt /dev/null --tls-key /dev/null --nworkers 1`
+On node7: `python3 client.py`
+==> You will see the HTTP request is handled proeperly
+
+[Reference: https://blog.naver.com/username1103/222111281954]
+
+### Redis Test
+1. node8.conf: `tls-ca-cert-file CA.pem`, `tls-cert-file svr.crt`, `tls-key-file svr.key`
+2. node8: `~/redis-server-tls ../config/node8_10001.conf`
+3. node7: `~/redis-cli-tls --tls     --cert ~/tls2/svr.crt     --key ~/tls2/svr.key     --cacert ~/tls2/CA.pem     -h 10.0.1.8 -p 10000`
+
+
+
 # Prism
 
 ## Setup on nsl cluster
