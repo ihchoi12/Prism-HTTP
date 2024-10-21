@@ -12,8 +12,8 @@ include $(TOPDIR)/src/Makefile.inc
 OBJS:= phttp_bench_backend.o phttp_bench_proxy.o
 TARGETS:= phttp-bench-backend phttp-bench-proxy
 
-CPPFLAGS+= \
-	-DPHTTP_DEBUG 
+# CPPFLAGS+= \
+# 	-DPHTTP_DEBUG 
 
 all: $(TARGETS)
 
