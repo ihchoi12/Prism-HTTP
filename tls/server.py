@@ -5,6 +5,9 @@ context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain('svr.crt', 'svr.key')
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
+    # Allow address reuse to avoid the "Address already in use" error
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    
     sock.bind(('10.0.1.8', 10000))
     sock.listen(5)
     with context.wrap_socket(sock, server_side=True) as ssock:
