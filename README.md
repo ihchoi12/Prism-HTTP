@@ -30,7 +30,7 @@ IMPORTANT: the permission of certificate files should be `-rw-r--r--` so that th
 `chmod 644 ./svr.key`
 On node8: `sudo phttp-bench-proxy --addr 10.0.1.8 --port 10000 --mac 08:c0:eb:b6:e8:05 --backlog 8192 --ho-addr 10.0.1.8 --ho-port 10001 --ho-backlog 64 --sw-addr 10.0.1.7 --sw-port 18080 --backends 10.0.1.9:10000 --tls --tls-crt ./tls/svr.crt --tls-key ./tls/svr.key --nworkers 1`
 On node9: `sudo phttp-bench-backend --addr 10.0.1.9 --port 80 --mac 08:c0:eb:b6:c5:ad --backlog 8192 --ho-addr 10.0.1.9 --ho-port 10000 --ho-backlog 64 --sw-addr 10.0.1.7 --sw-port 18080 --proxy-addr 10.0.1.8 --proxy-port 10001 --tls --tls-crt /dev/null --tls-key /dev/null --nworkers 1`
-On node7: `python3 client.py`
+On node7: `cd tls` and `python3 client.py`
 ==> You will see the HTTP request is handled proeperly
 
 [Reference: https://blog.naver.com/username1103/222111281954]
