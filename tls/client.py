@@ -3,7 +3,7 @@ import ssl
 
 hostname = '10.0.1.8:10000'
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-context.load_verify_locations('CA.pem')
+context.load_verify_locations('/usr/local/tls/CA.pem')
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
     with context.wrap_socket(sock, server_hostname=hostname) as ssock:
