@@ -1,4 +1,7 @@
-*.o
 *
 !*.*
-!tls
+!*/
+src/cpp_gen
+src/include
+lib*
+*.o

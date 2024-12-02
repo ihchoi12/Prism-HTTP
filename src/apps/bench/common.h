@@ -2,6 +2,7 @@
 
 #include <phttp.h>
 #include <phttp_prof.h>
+#include <util.h>
 // #define ROOT "/var/www/demo/"
 char ROOT[64] = "/var/www/demo/"; 
 #define BUFFER_SIZE 1024
@@ -43,9 +44,12 @@ load_keys(struct TLSContext *context, const char *fname, const char *priv_fname)
   unsigned char buf2[0xFFFF];
   int size = read_from_file(fname, buf, 0xFFFF);
   int size2 = read_from_file(priv_fname, buf2, 0xFFFF);
+  DEBUG("crt (%s): %d-byte, key (%s): %d-byte\n", fname, size, priv_fname, size2);
   if (size > 0) {
     if (context) {
+      DEBUG("Loading certificate (%s): %d bytes\n", fname, size);
       tls_load_certificates(context, buf, size);
+      DEBUG("Loading key (%s): %d bytes\n", priv_fname, size2);
       tls_load_private_key(context, buf2, size2);
     }
   }
@@ -65,7 +69,12 @@ init_server_conf(struct phttp_args *args, http_server_socket_t *hss)
   hss->server_addr = inet_addr(args->addr.c_str());
   hss->server_port = htons(args->port);
   memcpy(hss->server_mac, args->mac, 6);
+  
+  DEBUG("Server Address: %s\n", args->addr.c_str());
+  DEBUG("Server Port: %u\n", args->port);
+  
   if (args->tls) {
+    DEBUG("Creating TLS (V1.2) context");
     hss->tls = tls_create_context(1, TLS_V12);
     assert(hss->tls != NULL);
     load_keys(hss->tls, args->tls_crt.c_str(), args->tls_key.c_str());
@@ -97,8 +106,11 @@ init_all_conf(uv_loop_t *loop, struct phttp_args *args,
               http_server_socket_t *hss, http_handoff_server_socket_t *hhss,
               struct global_config *gconf)
 {
+  DEBUG("init_server_conf()\n");
   init_server_conf(args, hss);
+  DEBUG("init_handoff_server_conf()\n");
   init_handoff_server_conf(args, hhss, hss);
+  DEBUG("init_global_conf()\n");
   init_global_conf(args, gconf, loop);
 }
 

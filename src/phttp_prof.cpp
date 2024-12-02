@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <phttp_prof.h>
+#include <climits>
 
 bool initialized = false;
 FILE *prof_file;
@@ -13,7 +14,7 @@ FILE *prof_file;
 // FILE *import_side;
 
 uint64_t start_tstamp, end_tstamp;
-std::vector<std::vector<int>> prof_vector = {{},{},{},{},{},{}};
+std::vector<std::vector<int>> prof_vector = {{},{},{},{}};
 
 void
 prof_start_tstamp(uint64_t tstamp)
@@ -40,37 +41,39 @@ prof_end_tstamp(enum prof_cpu_ovhd_ids id, uint64_t tstamp)
   return;
 #endif
 }
-void prof_print_result(){
-  printf("ID,AVG(ns)\n");
-
-  size_t last_index = 0;
-  for (size_t i = 0; i < prof_vector.size(); ++i) {
-    printf("%zu\n", prof_vector[i].size());
-    if(last_index == 0 || prof_vector[i].size() < last_index){
-      last_index = prof_vector[i].size();
+void prof_print_result() {
+    size_t last_index = 0;
+    for (size_t i = 0; i < prof_vector.size(); i++) {
+        printf("%zu\n", prof_vector[i].size());
+        if (last_index == 0 || prof_vector[i].size() < last_index) {
+            last_index = prof_vector[i].size();
+        }
     }
-  }
-  if(last_index <= 110000){
-    printf("need more migrations (now %zu)\n", last_index);
-    exit(1);
-  }
-  int sum_export = 0;
-  int sum_import = 0;
-  for (size_t i = last_index - 100000; i < last_index; i++){
-    sum_export = 0;
-    sum_import = 0;
-    for (size_t j = 0; j < prof_vector.size(); j++){
-      if(j < prof_vector.size()-1){
-        sum_export += prof_vector[j][i];
-      }
-      else{
-        sum_import += prof_vector[j][i];
-      }
-    }
-    printf("PROF_EXPORT,%d\n", sum_export);
-    printf("PROF_IMPORT,%d\n", sum_import);
-  }
 
+    if(last_index <= 10000){
+      printf("need more migrations (now %zu)\n", last_index);
+      exit(1);
+    }
+
+    // Compute and print average, min, max for each vector
+    printf("ID,MIN(ns),MAX(ns),AVG(ns)\n");
+    for (size_t j = 0; j < 4; j++) { // 0 to 3 for prof_vector[0] to prof_vector[3]
+        long long sum = 0;
+        long long min_val = LLONG_MAX;
+        long long max_val = LLONG_MIN;
+
+        for (size_t i = last_index - 10000; i < last_index; i++) {
+            long long value = prof_vector[j][i];
+            sum += value;
+            if (value < min_val) min_val = value;
+            if (value > max_val) max_val = value;
+        }
+
+        double avg = static_cast<double>(sum) / 10000.0;
+        printf("PROFCPU_%zu,%lld,%lld,%.2f\n", j, min_val, max_val, avg);
+    }
+
+    printf("FINISH\n");
 }
 void
 prof_tstamp(enum prof_types type, enum prof_ids id, uint32_t peer_addr,

@@ -8,16 +8,19 @@ context.load_verify_locations('/usr/local/tls/CA.pem')
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0) as sock:
     with context.wrap_socket(sock, server_hostname=hostname) as ssock:
         ssock.connect(('10.0.1.8', 10000))
-        #ssock.send(b'hello')
-        request = f"GET / HTTP/1.1\r\nHost: 10.0.1.8:10000\r\nConnection: close\r\n\r\n"
+        
+        for i in range(10100):
 
-        # Send the request
-        ssock.send(request.encode())
+            #ssock.send(b'hello')
+            request = f"GET / HTTP/1.1\r\nHost: 10.0.1.8:10000\r\nConnection: close\r\n\r\n"
 
-        # Receive the response
-        response = b''
-        data = ssock.recv(4096)
-        response += data
+            # Send the request
+            ssock.send(request.encode())
 
-        # Print the response (headers + body)
-        print(response.decode())
+            # Receive the response
+            response = b''
+            data = ssock.recv(4096)
+            response += data
+
+            # Print the response (headers + body)
+            print(response.decode())

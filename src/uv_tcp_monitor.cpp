@@ -83,7 +83,7 @@ err0:
 static void
 uv_tcp_monitor_on_tcp_close(uv_poll_t *handle, int status, int events)
 {
-  prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
   int fd;
 
@@ -111,7 +111,7 @@ uv_tcp_monitor_on_tcp_close(uv_poll_t *handle, int status, int events)
 #ifdef TCP_MONITOR_USE_CREME
   close(monitor->creme_fd);
 #endif
-  prof_end_tstamp(PROF_EXPORT_4, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  // prof_end_tstamp(PROF_EXPORT_4, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
   monitor->saved_close(monitor);
 }

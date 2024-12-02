@@ -8,6 +8,7 @@
 
 #include "common.h"
 
+#ifdef PHTTP_DEBUG
 #define DEBUG(_fmt, ...)                                                       \
   do {                                                                         \
     struct timeval _t0;                                                        \
@@ -15,6 +16,10 @@
     fprintf(stderr, "%03d.%06d %s [%d] " _fmt, (int)(_t0.tv_sec % 1000),       \
             (int)_t0.tv_usec, __FUNCTION__, __LINE__, ##__VA_ARGS__);          \
   } while (0)
+#else
+#define DEBUG(_fmt, ...)
+#define assertf(A, M, ...)
+#endif
 
 static http_server_socket_t hss;
 static http_handoff_server_socket_t hhss;

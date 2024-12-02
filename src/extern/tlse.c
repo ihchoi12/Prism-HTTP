@@ -1557,6 +1557,17 @@ unsigned char *_private_tls_decrypt_ecc_dhe(struct TLSContext *context, const un
 unsigned char *_private_tls_decrypt_rsa(struct TLSContext *context, const unsigned char *buffer, unsigned int len, unsigned int *size) {
     *size = 0;
     if ((!len) || (!context) || (!context->private_key) || (!context->private_key->der_bytes) || (!context->private_key->der_len)) {
+        DEBUG_PRINT("len: %d\n", len);
+        DEBUG_PRINT("context: %p\n", context);
+        
+        if (context) {
+            DEBUG_PRINT("context->private_key: %p\n", context->private_key);
+            if (context->private_key) {
+                DEBUG_PRINT("context->private_key->der_bytes: %p\n", context->private_key->der_bytes);
+                DEBUG_PRINT("context->private_key->der_len: %d\n", context->private_key->der_len);
+            }
+        }
+
         DEBUG_PRINT("No private key set\n");
         return NULL;
     }
@@ -1823,10 +1834,30 @@ int _private_rsa_sign_hash_md5sha1(const unsigned char *in, unsigned long inlen,
 #endif
 
 int _private_tls_sign_rsa(struct TLSContext *context, unsigned int hash_type, const unsigned char *message, unsigned int message_len, unsigned char *out, unsigned long *outlen) {
-    if ((!outlen) || (!context) || (!out) || (!outlen) || (!context->private_key) || (!context->private_key->der_bytes) || (!context->private_key->der_len)) {
+    if ((!outlen) || (!context) || (!out) || (!context->private_key) || (!context->private_key->der_bytes) || (!context->private_key->der_len)) {
+        // Print the value of outlen
+        DEBUG_PRINT("outlen: %p\n", outlen);
+
+        // Print the value of context
+        DEBUG_PRINT("context: %p\n", context);
+
+        // If context is not NULL, print the values of private_key and its members
+        if (context) {
+            DEBUG_PRINT("context->private_key: %p\n", context->private_key);
+            
+            if (context->private_key) {
+                DEBUG_PRINT("context->private_key->der_bytes: %p\n", context->private_key->der_bytes);
+                DEBUG_PRINT("context->private_key->der_len: %d\n", context->private_key->der_len);
+            }
+        }
+
+        // Print the value of out
+        DEBUG_PRINT("out: %p\n", out);
+
         DEBUG_PRINT("No private key set\n");
         return TLS_GENERIC_ERROR;
     }
+
     tls_init();
     rsa_key key;
     int err;
@@ -3090,16 +3121,23 @@ unsigned char *tls_pem_decode(const unsigned char *data_in, unsigned int input_l
     unsigned int i;
     *output_len = 0;
     int alloc_len = input_length / 4 * 3;
+    // fprintf(stderr, "alloc_len: %d", alloc_len);
+
     unsigned char *output = (unsigned char *)TLS_MALLOC(alloc_len);
     if (!output)
         return NULL;
     unsigned int start_at = 0;
     unsigned int idx = 0;
     for (i = 0; i < input_length; i++) {
-        if ((data_in[i] == '\n') || (data_in[i] == '\r'))
+        // fprintf(stderr, "\ndata_in[%d] :%c", i, data_in[i]);
+
+        if ((data_in[i] == '\n') || (data_in[i] == '\r')){
+            // fprintf(stderr, "\ncontinue 1");
             continue;
+        }
         
         if (data_in[i] != '-')  {
+            // fprintf(stderr, "\ncontinue 2");
             // read entire line
             while ((i < input_length) && (data_in[i] != '\n'))
                 i++;
@@ -3111,18 +3149,24 @@ unsigned char *tls_pem_decode(const unsigned char *data_in, unsigned int input_l
             //read until end of line
             while ((i < input_length) && (data_in[i] != '\n'))
                 i++;
+            // fprintf(stderr, "\n[0] start_at: %d", start_at);
             if (start_at) {
                 if (cert_index > 0) {
                     cert_index--;
                     start_at = 0;
                 } else {
+                    // fprintf(stderr, "\n _private_b64_decode: from %c (idx %d) to %c (idx %d)", 
+                    // data_in[start_at], start_at, data_in[end_idx-2], end_idx-2);
                     idx = _private_b64_decode((const char *)&data_in[start_at], end_idx - start_at, output);
                     break;
                 }
             } else
                 start_at = i + 1;
+            // fprintf(stderr, "\n[1] start_at: %d", start_at);
+            
         }
     }
+    // fprintf(stderr, "\nidx: %d", idx);
     *output_len = idx;
     if (!idx) {
         TLS_FREE(output);
@@ -8516,6 +8560,7 @@ int _private_is_oid(struct _private_OID_chain *ref_chain, const unsigned char *l
 }
 
 int _private_asn1_parse(struct TLSContext *context, struct TLSCertificate *cert, const unsigned char *buffer, unsigned int size, int level, unsigned int *fields, unsigned char *has_key, int client_cert, unsigned char *top_oid, struct _private_OID_chain *chain) {
+    // fprintf(stderr, "[_private_asn1_parse is called]\n");
     struct _private_OID_chain local_chain;
     local_chain.top = chain;
     unsigned int pos = 0;
@@ -8530,6 +8575,19 @@ int _private_asn1_parse(struct TLSContext *context, struct TLSCertificate *cert,
     const unsigned char *cert_data = NULL;
     unsigned int cert_len = 0;
     while (pos < size) {
+        // fprintf(stderr, "*********************\nLevel: %d\n", level);
+        // fprintf(stderr, "Fields: ");
+        // for (int i = 0; i < level; i++) {
+        //     fprintf(stderr, "%d ", fields[i]);
+        // }
+        // fprintf(stderr, "\n");
+        // fprintf(stderr, "OID: ");
+        // for (int i = 0; i < 16; i++) {
+        //     printf(stderr, "%02x ", local_chain.oid[i]);
+        // }
+        // fprintf(stderr, "\n");
+        // fprintf(stderr, "pos: %d, size: %d, \n\n", pos, size);
+
         unsigned int start_pos = pos;
         CHECK_SIZE(2, size - pos, TLS_NEED_MORE_DATA)
         unsigned char first = buffer[pos++];
@@ -8542,8 +8600,10 @@ int _private_asn1_parse(struct TLSContext *context, struct TLSCertificate *cert,
         if (level <= TLS_ASN1_MAXLEVEL)
             fields[level - 1] = idx;
         unsigned int length = asn1_get_len((unsigned char *)&buffer[pos], size - pos, &octets);
+        // fprintf(stderr,"octets: %u, size: %u, pos: %u, length: %d\n", octets, size, pos, length);
         if ((octets > 4) || (octets > size - pos))  {
-            DEBUG_PRINT("CANNOT READ CERTIFICATE\n");
+            DEBUG_PRINT("\n\n\n******CANNOT READ CERTIFICATE*******\n\n\n");
+            // exit(1);
             return pos;
         }
         pos += octets;
@@ -8848,14 +8908,17 @@ struct TLSCertificate *asn1_parse(struct TLSContext *context, const unsigned cha
     memset(fields, 0, sizeof(int) * TLS_ASN1_MAXLEVEL);
     struct TLSCertificate *cert = tls_create_certificate();
     if (cert) {
+        // fprintf(stderr, "client_cert: %d\n", client_cert);
         if (client_cert < 0) {
             client_cert = 0;
             // private key
             unsigned char top_oid[16];
             memset(top_oid, 0, sizeof(top_oid));
             _private_asn1_parse(context, cert, buffer, size, 1, fields, NULL, client_cert, top_oid, NULL);
-        } else
+        } else {
+            // fprintf(stderr, "ASN-Parsing buffer (%d-byte) \n", size);
             _private_asn1_parse(context, cert, buffer, size, 1, fields, NULL, client_cert, NULL, NULL);
+        }
     }
     return cert;
 }
@@ -8870,6 +8933,7 @@ int tls_load_certificates(struct TLSContext *context, const unsigned char *pem_b
         unsigned char *data = tls_pem_decode(pem_buffer, pem_size, idx++, &len);
         if ((!data) || (!len))
             break;
+        // fprintf(stderr, "Decoded pem (idx: %d, len: %d), now it should be asn_parsed \n", idx, len);
         struct TLSCertificate *cert = asn1_parse(context, data, len, 0);
         if (cert) {
             if ((cert->version == 2) 
@@ -8890,7 +8954,7 @@ int tls_load_certificates(struct TLSContext *context, const unsigned char *pem_b
                 context->certificates = (struct TLSCertificate **)TLS_REALLOC(context->certificates, (context->certificates_count + 1) * sizeof(struct TLSCertificate *));
                 context->certificates[context->certificates_count] = cert;
                 context->certificates_count++;
-                DEBUG_PRINT("Loaded certificate: %i\n", (int)context->certificates_count);
+                DEBUG_PRINT("[1] Loaded certificate: %i\n", (int)context->certificates_count);
             } else {
                 DEBUG_PRINT("WARNING - certificate version error (v%i)\n", (int)cert->version);
                 tls_destroy_certificate(cert);
@@ -10054,7 +10118,7 @@ int tls_load_root_certificates(struct TLSContext *context, const unsigned char *
                 }
                 context->root_certificates[context->root_count] = cert;
                 context->root_count++;
-                DEBUG_PRINT("Loaded certificate: %i\n", (int)context->root_count);
+                DEBUG_PRINT("[2] Loaded certificate: %i\n", (int)context->root_count);
             } else {
                 DEBUG_PRINT("WARNING - certificate version error (v%i)\n", (int)cert->version);
                 tls_destroy_certificate(cert);
@@ -10124,6 +10188,7 @@ int tls_unmake_ktls(struct TLSContext *context, int socket) {
 }
 
 int tls_make_ktls(struct TLSContext *context, int socket) {
+    DEBUG_PRINT("tls_make_ktls\n");
     if ((!context) || (context->critical_error) || (context->connection_status != 0xFF) || (!context->crypto.created)) {
         DEBUG_PRINT("CANNOT SWITCH TO kTLS\n");
         return TLS_GENERIC_ERROR;

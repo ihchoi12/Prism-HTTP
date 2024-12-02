@@ -29,26 +29,28 @@ enum prof_ids {
 
 enum prof_cpu_ovhd_ids {
   /* Export side */
-  PROF_EXPORT_1,
-  PROF_EXPORT_2,
-  PROF_EXPORT_3,
-  PROF_EXPORT_4,
-  PROF_EXPORT_5,
+  PROFCPU_EXPORT_TCP,
+  PROFCPU_EXPORT_TLS,
+  // PROF_EXPORT_3,
+  // PROF_EXPORT_4,
+  // PROF_EXPORT_5,
   
   /* Import side */
-  PROF_IMPORT_1,
+  PROFCPU_IMPORT_TCP,
+  PROFCPU_IMPORT_TLS,
 };
 
 static const char* prof_cpu_ovhd_id_names[] = {
    /* Export side */
-  "PROF_EXPORT_1",
-  "PROF_EXPORT_2",
-  "PROF_EXPORT_3",
-  "PROF_EXPORT_4",
-  "PROF_EXPORT_5",
+  "PROFCPU_EXPORT_TCP",
+  "PROFCPU_EXPORT_TLS",
+  // "PROF_EXPORT_3",
+  // "PROF_EXPORT_4",
+  // "PROF_EXPORT_5",
   
   /* Import side */
-  "PROF_IMPORT_1",
+  "PROFCPU_IMPORT_TCP",
+  "PROFCPU_IMPORT_TLS",
 };
 
 

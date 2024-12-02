@@ -168,7 +168,7 @@ continue_import(uv_loop_t *loop, uv_tcp_t **client,
   hcs->peername_cache.peer_port = ho_req->tcp().peer_port();
   prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   error = import_tcp(loop, client, &ho_req->tcp());
-  prof_end_tstamp(PROF_IMPORT_1, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+  prof_end_tstamp(PROFCPU_IMPORT_TCP, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
   
   assert(error == 0);
   // PROF(PROF_IMPORT_TCP, hcs->peername_cache.peer_addr,
@@ -179,7 +179,10 @@ continue_import(uv_loop_t *loop, uv_tcp_t **client,
   assert(error == 0);
 
   if (ho_req->has_tls()) {
+    prof_start_tstamp(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count()); 
     error = import_tls(*client, &hcs->tls, &ho_req->tls());
+    prof_end_tstamp(PROFCPU_IMPORT_TLS, std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+ 
     assert(error == 0);
     // PROF(PROF_IMPORT_TLS, hcs->peername_cache.peer_addr,
     //      hcs->peername_cache.peer_port);
